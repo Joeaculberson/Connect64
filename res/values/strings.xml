@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">JoeCulbersonConnect64</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="restart">Restart</string>
+    <string name="delete">Delete</string>
+    <string name="level">Level </string>
+    <string name="selectionOnly">Selection Only</string>
+    <string name="has_already_been_used"> has already been used.</string>
+	<string name="cannot_alter_given_numbers">Cannot alter given numbers.</string>
+	<string name="submit">Submit</string>
+	<string name="next_level">Next Level</string>
+	<string name="replay">Replay</string>
+	<string name="success_message">Congrats! You won.</string>
+</resources>
