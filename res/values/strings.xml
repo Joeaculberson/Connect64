@@ -14,4 +14,5 @@
 	<string name="next_level">Next Level</string>
 	<string name="replay">Replay</string>
 	<string name="success_message">Congrats! You won.</string>
+	<string name="congratulations_message">Congratulations! You won!</string>
 </resources>

@@ -12,6 +12,7 @@ import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -181,13 +182,37 @@ public class Connect64Activity extends Activity {
 		}
 		return super.onOptionsItemSelected(item);
 	}
+	
+	private void restartGame() {
+		this.clearBoard();
+		this.setBoard(this.selectedLevel);
+		this.determineAndSetStartingNumber();
+		if (this.selectedCell != null) {
+			ColorDrawable buttonColor = (ColorDrawable) this.selectedCell.getBackground();
+			if (buttonColor.getColor() != Color.LTGRAY) {
+				this.selectedCell.setBackgroundColor(Color.WHITE);
+				this.selectedCell.setTextColor(Color.BLACK);
+			}
+			this.selectedCell = null;
+		}
+	}
+
+	private void clearBoard() {
+		for (int i = 0; i < BOARD_WIDTH; i++) {
+			for (int j = 0; j < BOARD_HEIGHT; j++) {
+				this.gameBoard[i][j].setText("  ");
+				this.gameBoard[i][j].setBackgroundColor(Color.WHITE);
+				this.gameBoard[i][j].setTextColor(Color.BLACK);
+			}
+		}
+	}
 
 	private class ButtonListener implements OnClickListener {
 
 		@Override
 		public void onClick(View v) {
 			if (v.getId() == R.id.restartButton) {
-				this.restartGame();
+				Connect64Activity.this.restartGame();
 			} else if (v.getId() == R.id.deleteButton) {
 				this.deleteCell();
 			} else if (v.getId() == R.id.submitButton) {
@@ -200,38 +225,16 @@ public class Connect64Activity extends Activity {
 			boolean isCorrect = solver.solveGame();
 			
 			if (isCorrect) {
-				Toast.makeText(Connect64Activity.this, "You win!", Toast.LENGTH_SHORT).show();
-				//NextLevelDialogFragment dialog = new NextLevelDialogFragment();
-				//dialog.show(getFragmentManager(), null);
+				NextLevelDialogFragment nlDialog = new NextLevelDialogFragment();
+				nlDialog.show(getFragmentManager(), "NextLevel");
 			} else {
-				Toast.makeText(Connect64Activity.this, "You lose!", Toast.LENGTH_SHORT).show();
+				Toast.makeText(Connect64Activity.this, "Incorrect solution", Toast.LENGTH_SHORT).show();
 			}
 		}
 
 		private void deleteCell() {
 			if (Connect64Activity.this.selectedCell != null) {
 				Connect64Activity.this.selectedCell.setText("  ");
-			}
-		}
-
-		private void restartGame() {
-			this.clearBoard();
-			Connect64Activity.this
-					.setBoard(Connect64Activity.this.selectedLevel);
-			Connect64Activity.this.determineAndSetStartingNumber();
-			if (Connect64Activity.this.selectedCell != null) {
-				Connect64Activity.this.selectedCell
-						.setBackgroundColor(Color.WHITE);
-				Connect64Activity.this.selectedCell.setTextColor(Color.BLACK);
-				Connect64Activity.this.selectedCell = null;
-			}
-		}
-
-		private void clearBoard() {
-			for (int i = 0; i < BOARD_WIDTH; i++) {
-				for (int j = 0; j < BOARD_HEIGHT; j++) {
-					Connect64Activity.this.gameBoard[i][j].setText("  ");
-				}
 			}
 		}
 
@@ -280,11 +283,7 @@ public class Connect64Activity extends Activity {
 		}
 
 		private void processSelectedNumber(int selectedNumber) {
-			if (isNumeric(Connect64Activity.this.selectedCell.getText()
-					.toString().trim())
-					&& Connect64Activity.this
-							.isGivenNumber(Integer.parseInt(selectedCell
-									.getText().toString().trim()))) {
+			if (isNumeric(Connect64Activity.this.selectedCell.getText().toString().trim()) && Connect64Activity.this.isGivenNumber(Integer.parseInt(selectedCell.getText().toString().trim()))) {
 				this.displayErrorAndSetSelectedToNull();
 			} else {
 				this.setCellNumberAndIncrementSelector(selectedNumber);
@@ -386,20 +385,23 @@ public class Connect64Activity extends Activity {
 	private class NextLevelDialogFragment extends DialogFragment {
 	    @Override
 	    public Dialog onCreateDialog(Bundle savedInstanceState) {
+	        // Use the Builder class for convenient dialog construction
 	        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-	        builder.setMessage(R.string.next_level)
+	        builder.setMessage(R.string.congratulations_message)
 	               .setPositiveButton(R.string.next_level, new DialogInterface.OnClickListener() {
 	                   public void onClick(DialogInterface dialog, int id) {
-	                       // FIRE ZE MISSILES!
+	                       Connect64Activity.this.selectedLevel += 1;
+	                       Connect64Activity.this.restartGame();
 	                   }
 	               })
 	               .setNegativeButton(R.string.replay, new DialogInterface.OnClickListener() {
 	                   public void onClick(DialogInterface dialog, int id) {
-	                       // User cancelled the dialog
+	                       Connect64Activity.this.restartGame();
 	                   }
 	               });
 	        // Create the AlertDialog object and return it
 	        return builder.create();
 	    }
 	}
+	
 }
