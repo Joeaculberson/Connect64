@@ -952,21 +952,20 @@
         android:text="@string/level"
         android:textAppearance="?android:attr/textAppearanceLarge" />
 
+    <Button
+        android:id="@+id/submitButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/deleteButton"
+        android:layout_below="@+id/deleteButton"
+        android:text="@string/submit" />
+
     <CheckBox
         android:id="@+id/selectionOnlyModeCheckBox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignBottom="@+id/connect64Container"
-        android:layout_alignLeft="@+id/deleteButton"
-        android:layout_marginBottom="19dp"
+        android:layout_alignLeft="@+id/submitButton"
         android:text="@string/selectionOnly" />
-
-    <Button
-        android:id="@+id/submitButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/selectionOnlyModeCheckBox"
-        android:layout_toLeftOf="@+id/levelText"
-        android:text="@string/submit" />
 
 </RelativeLayout>

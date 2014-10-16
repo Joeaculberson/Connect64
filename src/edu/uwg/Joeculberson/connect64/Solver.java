@@ -29,8 +29,8 @@ public class Solver {
 		int thisPosX = 0;
 		int thisPosY = 0;
 		
-		for (int i = 0; i < 8; i++) {
-			for (int j = 0; j < 8; j++) {
+		for (int i = 0; i < Connect64Activity.BOARD_HEIGHT; i++) {
+			for (int j = 0; j < Connect64Activity.BOARD_WIDTH; j++) {
 				if (this.gameBoard[i][j].getText().toString().trim()
 						.equals("1")) {
 					currentCell = this.gameBoard[i][j];
