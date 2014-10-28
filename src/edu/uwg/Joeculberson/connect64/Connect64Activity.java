@@ -3,6 +3,7 @@ package edu.uwg.Joeculberson.connect64;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -17,13 +18,20 @@ import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.GridLayout;
+import android.widget.ListView;
 import android.widget.NumberPicker;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -41,7 +49,9 @@ public class Connect64Activity extends Activity {
 	private static final int DEFAULT_SELECTED_LEVEL = 1;
 	private static final String NUMBER_PICKER_KEY = "NUMBER_PICKER_KEY";
 	private static final String SELECTED_CELL_KEY = "SELECTED_CELL_KEY";
+	private static final String IS_CONGRATS_SHOWING_KEY = "IS_CONGRATS_SHOWING_KEY";
 	private static final String SELECTED_CELL_COLOR = "#00BFFF";
+	private static final String TIMER_KEY = "TIMER_KEY";
 
 	private TextView[][] gameBoard;
 
@@ -54,13 +64,27 @@ public class Connect64Activity extends Activity {
 	HashMap<Integer, HashMap<Point, Integer>> levels;
 	private int selectedLevel;
 	private TextView selectedCell;
-	private TextView selectedLevelText;
 	private CheckBox selectionOnlyModeCheckBox;
+	private ListView levelsListView;
+	private CustomAdapter listAdapter;
+	private SharedPreferences sharedPref;
+
+	private TextView timerTextView;
+	private long startTime;
+	private long accumulatedMillis;
+	private long currentMillis;
+	
+	private boolean congratsDialogFragmentIsVisible;
+
+	private NextLevelDialogFragment nlDialog;
+
+	private Handler timerHandler;
+	private Runnable timerRunnable;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+
 		setContentView(R.layout.activity_connect64);
 
 		BoardListener boardListener = new BoardListener();
@@ -71,65 +95,174 @@ public class Connect64Activity extends Activity {
 		this.setTextViewListenersAndSetFont(boardListener, gridView);
 
 		this.selectedLevel = DEFAULT_SELECTED_LEVEL;
-		this.selectedLevelText = (TextView) findViewById(R.id.levelText);
-		this.selectedLevelText.append(" " + this.selectedLevel);
 
 		this.readInLevels();
 		this.setUpNumberPicker();
 		
-		SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+		this.timerTextView = (TextView) findViewById(R.id.timerTextView);
+		this.startTime = SystemClock.uptimeMillis();
+
+		this.sharedPref = this.getPreferences(Context.MODE_PRIVATE);
 		if (sharedPref.contains(SELECTED_LEVEL_KEY)) {
-			this.selectedLevel = sharedPref.getInt(SELECTED_LEVEL_KEY, 0);
-			this.selectedLevelText.setText(getString(R.string.level) + " " + this.selectedLevel);
-			for (int i = 0; i < BOARD_WIDTH; i++) {
-				for (int j = 0; j < BOARD_HEIGHT; j++) {
-					if (!sharedPref.getString(i + "," + j, "null").trim().equals("")) {
-						if(this.isGivenNumber(Integer.parseInt(sharedPref.getString(i + "," + j, "null").trim()))) {
-							this.gameBoard[i][j].setBackgroundColor(Color.LTGRAY);
-							this.gameBoard[i][j].setTextColor(Color.BLUE);
-						}
-					}
-					this.gameBoard[i][j].setText(sharedPref.getString(i + "," + j, "null"));
-				}
-			}
-			this.numberPicker.setValue(sharedPref.getInt(NUMBER_PICKER_KEY, 1));
-			String selectedCellCoords = sharedPref.getString(SELECTED_CELL_KEY, null);
-			if (selectedCellCoords != null) {
-				String[] coords = selectedCellCoords.split(",");
-				this.selectedCell = this.gameBoard[Integer.parseInt(coords[0])][Integer.parseInt(coords[1])];
-				this.setSelectedCellColor();
-			}
+			this.loadPreviousState(sharedPref);
 		} else {
 			this.setBoard(this.selectedLevel);
 			this.determineAndSetStartingNumber();
+			this.accumulatedMillis = 0;
+			this.congratsDialogFragmentIsVisible = false;
 		}
+
 		
+
 		this.setUpButtons();
+		this.setUpListView();
+		
+		this.timerHandler = new Handler();
+
+		this.timerRunnable = new Runnable() {
+
+			@Override
+			public void run() {
+				convertAndSetTime();
+
+				timerHandler.postDelayed(this, 500);
+			}
+		};
+
+		this.timerHandler.postDelayed(this.timerRunnable, 0);
+
 	}
 	
+	private void convertAndSetTime() {
+		currentMillis = SystemClock.uptimeMillis() - startTime
+				+ accumulatedMillis;
+		int seconds = (int) (currentMillis / 1000);
+		int minutes = seconds / 60;
+		seconds = seconds % 60;
+
+		timerTextView.setText(String
+				.format("%d:%02d", minutes, seconds));
+	}
+
+	private void loadPreviousState(SharedPreferences sharedPref) {
+		
+		this.selectedLevel = sharedPref.getInt(SELECTED_LEVEL_KEY, 0);
+		for (int i = 0; i < BOARD_WIDTH; i++) {
+			for (int j = 0; j < BOARD_HEIGHT; j++) {
+				this.loadSavedBoard(sharedPref, i, j);
+			}
+		}
+		this.numberPicker.setValue(sharedPref.getInt(NUMBER_PICKER_KEY, 1));
+		String selectedCellCoords = sharedPref.getString(SELECTED_CELL_KEY,
+				null);
+		this.accumulatedMillis = sharedPref.getLong(TIMER_KEY, -99);
+		this.convertAndSetTime();
+		if (selectedCellCoords != null) {
+			String[] coords = selectedCellCoords.split(",");
+			this.selectedCell = this.gameBoard[Integer.parseInt(coords[0])][Integer
+					.parseInt(coords[1])];
+			this.setSelectedCellColor();
+		}
+		this.congratsDialogFragmentIsVisible = sharedPref.getBoolean(IS_CONGRATS_SHOWING_KEY, false);
+		if (this.congratsDialogFragmentIsVisible) {
+			this.nlDialog = new NextLevelDialogFragment();
+			this.nlDialog.show(getFragmentManager(), "NextLevel");
+		}
+	}
+
+	private void loadSavedBoard(SharedPreferences sharedPref, int i, int j) {
+		if (!sharedPref.getString(i + "," + j, "null").trim().equals("")) {
+			if (this.isGivenNumber(Integer.parseInt(sharedPref.getString(
+					i + "," + j, "null").trim()))) {
+				this.gameBoard[i][j].setBackgroundColor(Color.LTGRAY);
+				this.gameBoard[i][j].setTextColor(Color.BLUE);
+			}
+		}
+		this.gameBoard[i][j].setText(sharedPref.getString(i + "," + j, "null"));
+	}
+
+	private void setUpListView() {
+		ArrayList<String> levelsList = new ArrayList<String>();
+
+		this.listAdapter = new CustomAdapter(this,
+				android.R.layout.simple_list_item_1, levelsList);
+
+		this.levelsListView = (ListView) findViewById(R.id.levelsListView);
+		this.levelsListView.setAdapter(this.listAdapter);
+
+		for (Integer currLevel : this.levels.keySet()) {
+			this.listAdapter.add(getString(R.string.level) + " " + currLevel);
+		}
+
+		this.levelsListView.setOnItemClickListener(new OnItemClickListener() {
+			@Override
+			public void onItemClick(AdapterView<?> a, View v, int position,
+					long id) {
+				for (int i = 0; i < levelsListView.getChildCount(); i++) {
+					levelsListView.getChildAt(i).setBackgroundColor(
+							Color.TRANSPARENT);
+				}
+				String selectedLevel = ((TextView) v).getText().toString()
+						.split(" ")[1].trim();
+				setToSelectedLevel(Integer.parseInt(selectedLevel));
+				((TextView) v).setBackgroundColor(Color.LTGRAY);
+				resetClock();
+			}
+
+		});
+	}
+
+	private void resetClock() {
+		accumulatedMillis = 0;
+		currentMillis = 0;
+		startTime = SystemClock.uptimeMillis();
+		timerHandler.postDelayed(timerRunnable, 0);
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		if (!this.congratsDialogFragmentIsVisible) {
+			this.startTime = SystemClock.uptimeMillis();
+			this.timerHandler.postDelayed(this.timerRunnable, 0);
+		}
+	}
+
+
 	@Override
 	protected void onPause() {
-		SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+		super.onPause();
+		this.timerHandler.removeCallbacks(timerRunnable);
+		this.accumulatedMillis = this.currentMillis;
+		this.saveGameState();
+	}
+
+	private void saveGameState() {
+		SharedPreferences sharedPref = this
+				.getPreferences(Context.MODE_PRIVATE);
 		SharedPreferences.Editor editor = sharedPref.edit();
 		editor.clear();
 		editor.commit();
-		
+
+		saveBoard(editor);
+		editor.putInt(SELECTED_LEVEL_KEY, this.selectedLevel);
+		editor.putInt(NUMBER_PICKER_KEY, this.numberPicker.getValue());
+		editor.putLong(TIMER_KEY, this.accumulatedMillis);
+		editor.putBoolean(IS_CONGRATS_SHOWING_KEY, this.congratsDialogFragmentIsVisible);
+		editor.commit();
+	}
+
+	private void saveBoard(SharedPreferences.Editor editor) {
 		for (int i = 0; i < BOARD_WIDTH; i++) {
 			for (int j = 0; j < BOARD_HEIGHT; j++) {
-				editor.putString(i + "," + j, this.gameBoard[i][j].getText().toString());
+				editor.putString(i + "," + j, this.gameBoard[i][j].getText()
+						.toString());
 				if (this.gameBoard[i][j] == this.selectedCell) {
 					editor.putString(SELECTED_CELL_KEY, i + "," + j);
 				}
 			}
 		}
-		editor.putInt(SELECTED_LEVEL_KEY, this.selectedLevel);
-		editor.putInt(NUMBER_PICKER_KEY, this.numberPicker.getValue());
-		editor.commit();
-		
-		super.onDestroy();
 	}
-
-
 
 	private void readInLevels() {
 		FileIO fileIO = new FileIO();
@@ -188,8 +321,8 @@ public class Connect64Activity extends Activity {
 
 	private void determineAndSetStartingNumber() {
 		int selectedNumber = 1;
-		if (isGivenNumber(selectedNumber)) {
-			while (isGivenNumber(selectedNumber)) {
+		if (this.isGivenNumber(selectedNumber)) {
+			while (this.isGivenNumber(selectedNumber)) {
 				selectedNumber = selectedNumber + 1;
 			}
 		}
@@ -222,23 +355,18 @@ public class Connect64Activity extends Activity {
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getMenuInflater().inflate(R.menu.main, menu);
-		for(Integer currLevel : this.levels.keySet()) {
-			menu.add(getString(R.string.level) + " " + currLevel);
-		}
+
 		return true;
 	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		String selectedLevel = item.getTitle().toString().split(" ")[1];
-		this.setToSelectedLevel(Integer.parseInt(selectedLevel));
 		return true;
 	}
 
 	private void setToSelectedLevel(int selectedLevel) {
 		this.selectedLevel = selectedLevel;
 		this.restartGame();
-		this.selectedLevelText.setText(getString(R.string.level) + " " + this.selectedLevel);
 	}
 
 	private void restartGame() {
@@ -254,6 +382,7 @@ public class Connect64Activity extends Activity {
 			}
 			this.selectedCell = null;
 		}
+		this.resetClock();
 	}
 
 	private void clearBoard() {
@@ -265,9 +394,10 @@ public class Connect64Activity extends Activity {
 			}
 		}
 	}
-	
+
 	private void setSelectedCellColor() {
-		this.selectedCell.setBackgroundColor(Color.parseColor(SELECTED_CELL_COLOR));
+		this.selectedCell.setBackgroundColor(Color
+				.parseColor(SELECTED_CELL_COLOR));
 		this.selectedCell.setTextColor(Color.BLUE);
 	}
 
@@ -292,7 +422,8 @@ public class Connect64Activity extends Activity {
 				MediaPlayer sound = MediaPlayer.create(Connect64Activity.this,
 						R.raw.cheering);
 				sound.start();
-				NextLevelDialogFragment nlDialog = new NextLevelDialogFragment();
+				nlDialog = new NextLevelDialogFragment();
+				Connect64Activity.this.congratsDialogFragmentIsVisible = true;
 				nlDialog.show(getFragmentManager(), "NextLevel");
 			} else {
 				Toast.makeText(Connect64Activity.this, "Incorrect solution",
@@ -302,14 +433,20 @@ public class Connect64Activity extends Activity {
 
 		private void deleteCell() {
 			if (Connect64Activity.this.selectedCell != null) {
-				Connect64Activity.this.selectedCell.setText("  ");
+				if (!Connect64Activity.this.selectedCell.getText().toString()
+						.equals("  ")) {
+					Connect64Activity.this.numberPicker.setValue(Integer
+							.parseInt(Connect64Activity.this.selectedCell
+									.getText().toString().trim()));
+					Connect64Activity.this.selectedCell.setText("  ");
+				}
 			}
 		}
 
 	}
 
 	private class BoardListener implements OnClickListener {
-		
+
 		private static final String BLANK_CELL = "  ";
 
 		@Override
@@ -454,27 +591,91 @@ public class Connect64Activity extends Activity {
 	}
 
 	private class NextLevelDialogFragment extends DialogFragment {
+		private static final int LAST_LEVEL = 8;
+
 		@Override
 		public Dialog onCreateDialog(Bundle savedInstanceState) {
 			AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-			builder.setMessage(R.string.congratulations_message)
-					.setPositiveButton(R.string.next_level,
-							new DialogInterface.OnClickListener() {
-								public void onClick(DialogInterface dialog,
-										int id) {
-									Connect64Activity.this.selectedLevel++;
-									Connect64Activity.this.setToSelectedLevel(Connect64Activity.this.selectedLevel);
-								}
-							})
-					.setNegativeButton(R.string.replay,
-							new DialogInterface.OnClickListener() {
-								public void onClick(DialogInterface dialog,
-										int id) {
-									Connect64Activity.this.restartGame();
-								}
-							});
+			builder.setTitle(getString(R.string.level_complete));
+			timerHandler.removeCallbacks(timerRunnable);
+			if (selectedLevel == LAST_LEVEL) {
+				builder.setMessage(R.string.congratulations_message)
+						.setPositiveButton(R.string.start_over,
+								new DialogInterface.OnClickListener() {
+									public void onClick(DialogInterface dialog,
+											int id) {
+										goToLevel(1);
+										Connect64Activity.this.congratsDialogFragmentIsVisible = false;
+									}
+								})
+						.setNegativeButton(R.string.replay,
+								new DialogInterface.OnClickListener() {
+									public void onClick(DialogInterface dialog,
+											int id) {
+										Connect64Activity.this.restartGame();
+										Connect64Activity.this.congratsDialogFragmentIsVisible = false;
+									}
+								});
+			} else {
+				builder.setMessage(R.string.congratulations_message)
+						.setPositiveButton(R.string.next_level,
+								new DialogInterface.OnClickListener() {
+									public void onClick(DialogInterface dialog,
+											int id) {
+
+										goToLevel(selectedLevel + 1);
+										Connect64Activity.this.congratsDialogFragmentIsVisible = false;
+									}
+
+								})
+						.setNegativeButton(R.string.replay,
+								new DialogInterface.OnClickListener() {
+									public void onClick(DialogInterface dialog,
+											int id) {
+										Connect64Activity.this.restartGame();
+										Connect64Activity.this.congratsDialogFragmentIsVisible = false;
+									}
+								});
+
+			}
 			return builder.create();
 		}
+
+		private void goToLevel(int level) {
+			Connect64Activity.this.levelsListView.getChildAt(
+					Connect64Activity.this.selectedLevel - 1)
+					.setBackgroundColor(Color.TRANSPARENT);
+			Connect64Activity.this.selectedLevel = level;
+			Connect64Activity.this
+					.setToSelectedLevel(Connect64Activity.this.selectedLevel);
+			Connect64Activity.this.levelsListView.getChildAt(
+					Connect64Activity.this.selectedLevel - 1)
+					.setBackgroundColor(Color.LTGRAY);
+
+		}
+
+	}
+
+	private class CustomAdapter extends ArrayAdapter<String> {
+
+		public CustomAdapter(Context context, int resource, List<String> objects) {
+			super(context, resource, objects);
+			// TODO Auto-generated constructor stub
+		}
+
+		@Override
+		public View getView(int position, View convertView, ViewGroup parent) {
+			View v = super.getView(position, convertView, parent);
+			if (sharedPref.getInt(SELECTED_LEVEL_KEY, -1) != -1) {
+				if ((selectedLevel - 1) == position) {
+					v.setBackgroundColor(Color.LTGRAY);
+				} else {
+					v.setBackgroundColor(Color.TRANSPARENT);
+				}
+			}
+			return v;
+		}
+
 	}
 
 }

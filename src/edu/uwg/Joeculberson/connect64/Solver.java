@@ -7,10 +7,21 @@ import android.widget.TextView;
 
 public class Solver {
 
+	private static final int TOTAL_CELLS = 63;
+
 	private TextView[][] gameBoard;
 
 	private final static int MAX_X = 7, MAX_Y = 7;
 
+	/**
+	 * Constructor for the Solver class.
+	 * 
+	 * Precondition: gameBoard != null
+	 * 
+	 * Postcondition: gameBoard == gameBoard
+	 * 
+	 * @param gameBoard
+	 */
 	public Solver(TextView[][] gameBoard) {
 		this.gameBoard = gameBoard;
 
@@ -26,16 +37,16 @@ public class Solver {
 	public boolean solveGame() {
 		TextView currentCell = null;
 		boolean oneInserted = false;
-		int thisPosX = 0;
-		int thisPosY = 0;
+		int positionX = 0;
+		int positionY = 0;
 		
 		for (int i = 0; i < Connect64Activity.BOARD_HEIGHT; i++) {
 			for (int j = 0; j < Connect64Activity.BOARD_WIDTH; j++) {
 				if (this.gameBoard[i][j].getText().toString().trim()
 						.equals("1")) {
 					currentCell = this.gameBoard[i][j];
-					thisPosX = i;
-					thisPosY = j;
+					positionX = i;
+					positionY = j;
 					oneInserted = true;
 				}
 			}
@@ -45,8 +56,8 @@ public class Solver {
 			return false;
 		}
 
-		for(int i = 0; i < 63; i++) {
-			HashMap<Point, String> neighbors = this.getNeighbors(thisPosX,thisPosY, MAX_X, MAX_Y);
+		for(int i = 0; i < TOTAL_CELLS; i++) {
+			HashMap<Point, String> neighbors = this.getNeighbors(positionX,positionY, MAX_X, MAX_Y);
 			if (neighbors.containsValue("")) {
 				return false;
 			}
@@ -58,8 +69,8 @@ public class Solver {
 				for (Point currPoint : neighbors.keySet()) {
 					if (Integer.parseInt(neighbors.get(currPoint).trim()) == nextVal){
 						currentCell = this.gameBoard[currPoint.x][currPoint.y];
-						thisPosX = currPoint.x;
-						thisPosY = currPoint.y;
+						positionX = currPoint.x;
+						positionY = currPoint.y;
 					}
 				}
 			}

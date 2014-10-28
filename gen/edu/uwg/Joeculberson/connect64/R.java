@@ -25,14 +25,14 @@ public final class R {
         public static final int ic_launcher=0x7f020000;
     }
     public static final class id {
-        public static final int action_settings=0x7f090047;
+        public static final int action_settings=0x7f090048;
         public static final int connect64Container=0x7f090000;
         public static final int deleteButton=0x7f090043;
-        public static final int levelText=0x7f090044;
+        public static final int levelsListView=0x7f090046;
         public static final int numberPicker1=0x7f090041;
         public static final int restartButton=0x7f090042;
-        public static final int selectionOnlyModeCheckBox=0x7f090046;
-        public static final int submitButton=0x7f090045;
+        public static final int selectionOnlyModeCheckBox=0x7f090045;
+        public static final int submitButton=0x7f090044;
         public static final int textView1=0x7f090001;
         public static final int textView10=0x7f09000b;
         public static final int textView11=0x7f09000d;
@@ -97,6 +97,7 @@ public final class R {
         public static final int textView7=0x7f090005;
         public static final int textView8=0x7f090006;
         public static final int textView9=0x7f090007;
+        public static final int timerTextView=0x7f090047;
     }
     public static final class layout {
         public static final int activity_connect64=0x7f030000;
@@ -116,11 +117,13 @@ public final class R {
         public static final int has_already_been_used=0x7f060007;
         public static final int hello_world=0x7f060001;
         public static final int level=0x7f060005;
+        public static final int level_complete=0x7f060010;
         public static final int next_level=0x7f06000a;
         public static final int replay=0x7f06000b;
         public static final int restart=0x7f060003;
         public static final int saved_board_key=0x7f06000e;
         public static final int selectionOnly=0x7f060006;
+        public static final int start_over=0x7f06000f;
         public static final int submit=0x7f060009;
         public static final int success_message=0x7f06000c;
     }

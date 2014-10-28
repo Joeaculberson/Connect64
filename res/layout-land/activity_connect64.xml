@@ -942,16 +942,6 @@
         android:layout_below="@+id/restartButton"
         android:text="@string/delete" />
 
-    <TextView
-        android:id="@+id/levelText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignTop="@+id/numberPicker1"
-        android:layout_marginLeft="26dp"
-        android:layout_toRightOf="@+id/restartButton"
-        android:text="@string/level"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
-
     <Button
         android:id="@+id/submitButton"
         android:layout_width="wrap_content"
@@ -967,5 +957,19 @@
         android:layout_alignBottom="@+id/connect64Container"
         android:layout_alignLeft="@+id/submitButton"
         android:text="@string/selectionOnly" />
+
+    <ListView
+        android:id="@+id/levelsListView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/selectionOnlyModeCheckBox" >
+    </ListView>
+
+    <TextView
+        android:id="@+id/timerTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/submitButton"
+        android:layout_below="@+id/submitButton" />
 
 </RelativeLayout>
