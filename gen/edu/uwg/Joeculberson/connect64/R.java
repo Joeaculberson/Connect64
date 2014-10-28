@@ -25,15 +25,17 @@ public final class R {
         public static final int ic_launcher=0x7f020000;
     }
     public static final class id {
-        public static final int action_settings=0x7f090048;
+        public static final int action_settings=0x7f09004b;
         public static final int connect64Container=0x7f090000;
         public static final int deleteButton=0x7f090043;
         public static final int levelsListView=0x7f090046;
+        public static final int list=0x7f09004a;
+        public static final int nameTextView=0x7f090001;
         public static final int numberPicker1=0x7f090041;
+        public static final int puzzleTextView=0x7f090048;
         public static final int restartButton=0x7f090042;
         public static final int selectionOnlyModeCheckBox=0x7f090045;
         public static final int submitButton=0x7f090044;
-        public static final int textView1=0x7f090001;
         public static final int textView10=0x7f09000b;
         public static final int textView11=0x7f09000d;
         public static final int textView12=0x7f09000e;
@@ -97,10 +99,12 @@ public final class R {
         public static final int textView7=0x7f090005;
         public static final int textView8=0x7f090006;
         public static final int textView9=0x7f090007;
+        public static final int timeTextView=0x7f090049;
         public static final int timerTextView=0x7f090047;
     }
     public static final class layout {
         public static final int activity_connect64=0x7f030000;
+        public static final int high_scores_dialog_fragment=0x7f030001;
     }
     public static final class menu {
         public static final int main=0x7f080000;
@@ -116,6 +120,7 @@ public final class R {
         public static final int delete=0x7f060004;
         public static final int has_already_been_used=0x7f060007;
         public static final int hello_world=0x7f060001;
+        public static final int high_scores=0x7f060011;
         public static final int level=0x7f060005;
         public static final int level_complete=0x7f060010;
         public static final int next_level=0x7f06000a;

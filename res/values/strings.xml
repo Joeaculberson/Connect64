@@ -17,4 +17,5 @@
 	<string name="saved_board_key">edu.uwg.JoeCulberson.connnect.saved_board_key</string>
 	<string name="start_over">Start over</string>
 	<string name="level_complete">Level Complete!</string>
+	<string name="high_scores">High Scores</string>
 </resources>

@@ -5,10 +5,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import edu.uwg.Joeculberson.connect64.db.HighScoresContentProviderDB;
+import edu.uwg.Joeculberson.connect64.db.HighScoresContract.HighScores;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
@@ -80,6 +84,8 @@ public class Connect64Activity extends Activity {
 
 	private Handler timerHandler;
 	private Runnable timerRunnable;
+	
+	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -132,6 +138,8 @@ public class Connect64Activity extends Activity {
 		this.timerHandler.postDelayed(this.timerRunnable, 0);
 
 	}
+	
+	
 	
 	private void convertAndSetTime() {
 		currentMillis = SystemClock.uptimeMillis() - startTime
@@ -354,13 +362,17 @@ public class Connect64Activity extends Activity {
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
+		menu.add(getString(R.string.high_scores));
 		getMenuInflater().inflate(R.menu.main, menu);
-
 		return true;
 	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
+		if (item.getTitle().equals(getString(R.string.high_scores))) {
+			HighScoresDialogFragment dialog = new HighScoresDialogFragment();
+	        dialog.show(getFragmentManager(), "HighScores");
+		}
 		return true;
 	}
 
@@ -424,6 +436,13 @@ public class Connect64Activity extends Activity {
 				sound.start();
 				nlDialog = new NextLevelDialogFragment();
 				Connect64Activity.this.congratsDialogFragmentIsVisible = true;
+				ContentValues values = new ContentValues();
+				
+				values.put(HighScores.NAME, "Will add later");
+				values.put(HighScores.TIME, currentMillis + "");
+				values.put(HighScores.PUZZLE, selectedLevel + "");
+				getContentResolver().insert(HighScoresContentProviderDB.CONTENT_URI, values);
+				
 				nlDialog.show(getFragmentManager(), "NextLevel");
 			} else {
 				Toast.makeText(Connect64Activity.this, "Incorrect solution",
@@ -599,46 +618,55 @@ public class Connect64Activity extends Activity {
 			builder.setTitle(getString(R.string.level_complete));
 			timerHandler.removeCallbacks(timerRunnable);
 			if (selectedLevel == LAST_LEVEL) {
-				builder.setMessage(R.string.congratulations_message)
-						.setPositiveButton(R.string.start_over,
-								new DialogInterface.OnClickListener() {
-									public void onClick(DialogInterface dialog,
-											int id) {
-										goToLevel(1);
-										Connect64Activity.this.congratsDialogFragmentIsVisible = false;
-									}
-								})
-						.setNegativeButton(R.string.replay,
-								new DialogInterface.OnClickListener() {
-									public void onClick(DialogInterface dialog,
-											int id) {
-										Connect64Activity.this.restartGame();
-										Connect64Activity.this.congratsDialogFragmentIsVisible = false;
-									}
-								});
+				displayNextLevelDialogWithStartOver(builder);
 			} else {
-				builder.setMessage(R.string.congratulations_message)
-						.setPositiveButton(R.string.next_level,
-								new DialogInterface.OnClickListener() {
-									public void onClick(DialogInterface dialog,
-											int id) {
-
-										goToLevel(selectedLevel + 1);
-										Connect64Activity.this.congratsDialogFragmentIsVisible = false;
-									}
-
-								})
-						.setNegativeButton(R.string.replay,
-								new DialogInterface.OnClickListener() {
-									public void onClick(DialogInterface dialog,
-											int id) {
-										Connect64Activity.this.restartGame();
-										Connect64Activity.this.congratsDialogFragmentIsVisible = false;
-									}
-								});
+				displayNextLevelDialog(builder);
 
 			}
 			return builder.create();
+		}
+
+		private void displayNextLevelDialog(AlertDialog.Builder builder) {
+			builder.setMessage(R.string.congratulations_message)
+					.setPositiveButton(R.string.next_level,
+							new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog,
+										int id) {
+
+									goToLevel(selectedLevel + 1);
+									Connect64Activity.this.congratsDialogFragmentIsVisible = false;
+								}
+
+							})
+					.setNegativeButton(R.string.replay,
+							new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog,
+										int id) {
+									Connect64Activity.this.restartGame();
+									Connect64Activity.this.congratsDialogFragmentIsVisible = false;
+								}
+							});
+		}
+
+		private void displayNextLevelDialogWithStartOver(
+				AlertDialog.Builder builder) {
+			builder.setMessage(R.string.congratulations_message)
+					.setPositiveButton(R.string.start_over,
+							new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog,
+										int id) {
+									goToLevel(1);
+									Connect64Activity.this.congratsDialogFragmentIsVisible = false;
+								}
+							})
+					.setNegativeButton(R.string.replay,
+							new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog,
+										int id) {
+									Connect64Activity.this.restartGame();
+									Connect64Activity.this.congratsDialogFragmentIsVisible = false;
+								}
+							});
 		}
 
 		private void goToLevel(int level) {
